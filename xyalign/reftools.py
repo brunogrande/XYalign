@@ -157,7 +157,7 @@ class RefFasta():
 		outpath = "{}.fa".format(new_ref_prefix)
 		if type(chroms) != list:
 			chroms = list(chroms)
-		if bed_mask is not None:
+		if bed_mask:
 			maskedpath = "{}.masked.fa".format(new_ref_prefix)
 			with open(outpath, "w") as f:
 				subprocess.call(
