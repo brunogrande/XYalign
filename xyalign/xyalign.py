@@ -9,7 +9,6 @@ import subprocess
 import sys
 import time
 import pandas as pd
-import pysam
 import assemble
 import bam
 import ploidy
@@ -370,22 +369,14 @@ def parse_args():
 			sys.exit(1)
 
 	# Create directory structure if not already in place
-	if not os.path.exists(os.path.join(args.output_dir, "fastq")):
-		os.makedirs(os.path.join(args.output_dir, "fastq"))
-	if not os.path.exists(os.path.join(args.output_dir, "bam")):
-		os.makedirs(os.path.join(args.output_dir, "bam"))
-	if not os.path.exists(os.path.join(args.output_dir, "reference")):
-		os.makedirs(os.path.join(args.output_dir, "reference"))
-	if not os.path.exists(os.path.join(args.output_dir, "bed")):
-		os.makedirs(os.path.join(args.output_dir, "bed"))
-	if not os.path.exists(os.path.join(args.output_dir, "vcf")):
-		os.makedirs(os.path.join(args.output_dir, "vcf"))
-	if not os.path.exists(os.path.join(args.output_dir, "plots")):
-		os.makedirs(os.path.join(args.output_dir, "plots"))
-	if not os.path.exists(os.path.join(args.output_dir, "results")):
-		os.makedirs(os.path.join(args.output_dir, "results"))
-	if not os.path.exists(os.path.join(args.output_dir, "logfiles")):
-		os.makedirs(os.path.join(args.output_dir, "logfiles"))
+	utils.validate_dir(args.output_dir, "fastq")
+	utils.validate_dir(args.output_dir, "bam")
+	utils.validate_dir(args.output_dir, "reference")
+	utils.validate_dir(args.output_dir, "bed")
+	utils.validate_dir(args.output_dir, "vcf")
+	utils.validate_dir(args.output_dir, "plots")
+	utils.validate_dir(args.output_dir, "results")
+	utils.validate_dir(args.output_dir, "logfiles")
 
 	# Return arguments namespace
 	return args
@@ -756,14 +747,14 @@ if __name__ == "__main__":
 	logger.info("{}".format(citation))
 
 	# Set up param dictionary
-	xyalign_params_dict = {'ID': 'XYalign', 'VN': version, 'CL': []}
-	p = ""
-	for arg in args.__dict__:
-		p = p + "{}={}, ".format(arg, args.__dict__[arg])
-		xyalign_params_dict['CL'].append("{}={}".format(arg, args.__dict__[arg]))
+	xyalign_params_dict = {'ID': 'XYalign', 'VN': version}
+	args_dict = vars(args)
+	args_strs = [k + "=" + str(v) for k, v in args_dict.items()]
+	params = ', '.join(args_strs)
+	xyalign_params_dict['CL'] = args_strs
 
 	# Log parameters and pipeline start
-	logger.info("Parameters: {}".format(p))
+	logger.info("Parameters: {}".format(params))
 	logger.info("Beginning XYalign")
 
 	# Setup output paths
@@ -787,21 +778,17 @@ if __name__ == "__main__":
 		xy_out = os.path.join(reference_path, "xyalign_withY.masked.fa")
 	# variant/vcf related
 	noprocessing_vcf = os.path.join(
-		vcf_path, "{}.noprocessing.vcf".format(
-			args.sample_id))
+		vcf_path, "{}.noprocessing.vcf".format(args.sample_id))
 	postprocessing_vcf = os.path.join(
-		vcf_path, "{}.postprocessing.vcf".format(
-			args.sample_id))
+		vcf_path, "{}.postprocessing.vcf".format(args.sample_id))
 	if args.platypus_logfile is not None:
 		plat_log = args.platypus_logfile
 	else:
 		plat_log = args.sample_id
 	noprocessing_vcf_log = os.path.join(
-		logfile_path, "{}_noprocessing_platypus.log".format(
-			plat_log))
+		logfile_path, "{}_noprocessing_platypus.log".format(plat_log))
 	postprocessing_vcf_log = os.path.join(
-		logfile_path, "{}_postprocessing_platypus.log".format(
-			plat_log))
+		logfile_path, "{}_postprocessing_platypus.log".format(plat_log))
 	readbalance_prefix_noprocessing = os.path.join(
 		plots_path, "{}_noprocessing".format(args.sample_id))
 	readbalance_prefix_postprocessing = os.path.join(
@@ -814,9 +801,10 @@ if __name__ == "__main__":
 	# Bedfile related
 	if args.high_quality_bed_out is not None:
 		# high_prefix = args.high_quality_bed_out
-		print(
+		logger.error(
 			"--high_quality_bed_out is currently unsupported.  Please remove "
 			"this flag")
+		logging.shutdown()
 		sys.exit(1)
 	else:
 		high_prefix = "{}_highquality_preprocessing".format(args.sample_id)
@@ -824,18 +812,22 @@ if __name__ == "__main__":
 		bed_path, "{}.bed".format(high_prefix))
 	if args.low_quality_bed_out is not None:
 		# low_prefix = args.low_quality_bed_out
-		print(
+		logger.error(
 			"--low_quality_bed_out is currently unsupported.  Please remove "
 			"this flag")
+		logging.shutdown()
+		sys.exit(1)
 	else:
 		low_prefix = "{}_lowquality_preprocessing".format(args.sample_id)
 	output_bed_low = os.path.join(
 		bed_path, "{}.bed".format(low_prefix))
 	if args.high_quality_bed_out is not None:
 		# high_prefix_postprocessing = args.high_quality_bed_out
-		print(
+		logger.error(
 			"--high_quality_bed_out is currently unsupported.  Please remove "
 			"this flag")
+		logging.shutdown()
+		sys.exit(1)
 	else:
 		high_prefix_postprocessing = "{}_highquality_postprocessing".format(
 			args.sample_id)
@@ -843,23 +835,30 @@ if __name__ == "__main__":
 		bed_path, "{}.bed".format(high_prefix))
 	if args.low_quality_bed_out is not None:
 		# low_prefix_postprocessing = args.low_quality_bed_out
-		print(
+		logger.error(
 			"--low_quality_bed_out is currently unsupported.  Please remove "
 			"this flag")
+		logging.shutdown()
+		sys.exit(1)
 	else:
 		low_prefix_postprocessing = "{}_lowquality_postprocessing".format(
 			args.sample_id)
 	output_bed_low_postprocessing = os.path.join(
 		bed_path, "{}.bed".format(low_prefix))
 
-	######################################
-	############ Run XYalign #############
-	######################################
+	# --------------------------------------------------------------------- #
+	# ---------------------------- Run XYalign ---------------------------- #
+	# --------------------------------------------------------------------- #
 	ref = reftools.RefFasta(args.ref, args.samtools_path, args.bwa_path)
 	input_bam = bam.BamFile(args.bam, args.samtools_path)
 
 	# Check to ensure bam and fasta are compatible and imports work
 	if args.skip_compatibility_check is False:
+		# TODO (bgrande): I would recommend that you leave it up to the
+		# check_bam_fasta_compatibility function to shutdown logging and
+		# exit Python. Your error messages here and those in
+		# check_bam_fasta_compatibility seem redundant. I would just exit
+		# from within the check_bam_fasta_compatibility call.
 		compatible = utils.check_bam_fasta_compatibility(input_bam, ref)
 		if compatible is False:
 			logger.error(

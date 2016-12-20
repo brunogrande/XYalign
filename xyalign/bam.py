@@ -5,6 +5,7 @@ from __future__ import print_function
 import logging
 import numpy as np
 import os
+import sys
 import pandas as pd
 import pysam
 import subprocess
@@ -82,22 +83,21 @@ class BamFile():
 		"""
 		Extract chromosome length from BAM header.
 
-		args:
+		Args:
 			bamfile: pysam AlignmentFile object
 				- can be bam, cram, or sam, needs to be declared
 					in pysam.AlignmentFile call before passing to function
 			chrom: chromosome name (string)
 
-		returns:
+		Returns:
 			Length (int)
-
 		"""
 		bamfile = pysam.AlignmentFile(self.filepath, "rb")
 		lengths = dict(zip(bamfile.references, bamfile.lengths))
 		try:
-			l = lengths[chrom]
+			lens = lengths[chrom]
 			bamfile.close()
-			return l
+			return lens
 		except:
 			self.logger.error(
 				"{} not present in bam header for {}. Exiting.".format(
@@ -130,17 +130,20 @@ class BamFile():
 		Strips reads from a bam or cram file in provided regions and outputs
 		sorted fastqs containing reads, one set of fastq files per read group.
 
-		repairsh is the path to repair.sh (from BBmap)
-		single is either True or False; if true will output single-end fastq file,
-			if False, will output paired-end fastq files
-		output_directory is the directory for ALL output (including temporary files)
-		output_prefix is the name (without path) to use for prefix to output fastqs
-		regions is a list of regions from which reads will be stripped
+		Args:
+			repairsh: the path to repair.sh (from BBmap)
+			single: either True or False; if true will output single-end
+				fastq file, if False, will output paired-end fastq files
+			output_directory: the directory for ALL output (including
+				temporary files)
+			output_prefix: the name (without path) to use for prefix to
+				output fastqs
+			regions: a list of regions from which reads will be stripped
 
 		Returns:
-			A two-item list containing the path to a text file pairing read group
-				names with associated output fastqs, and a text file containing a
-				list of @RG lines associated with each read group
+			A two-item list containing the path to a text file pairing read
+				group names with associated output fastqs, and a text file
+				containing a list of @RG lines associated with each read group
 		"""
 		# Collect RGs
 		rg_start = time.time()
@@ -233,11 +236,12 @@ class BamFile():
 		The average of each metric will be calculated for each window of
 		size `window_size` and stored altogether in a pandas data frame.
 
-		chrom is the chromosome to analyze
-		window_size is the integer window size to use for sliding window analyses
-			- if set to None, will use intervals from target_file
-		target_file is a bed_file containing regions to analyze instead of
-			windows of a fixed size
+		Args:
+			chrom: the chromosome to analyze
+			window_size: integer window size to use for sliding window analyses
+				- if set to None, will use intervals from target_file
+			target_file: a bed_file containing regions to analyze instead of
+				windows of a fixed size
 				- will only be engaged if window_size is None
 
 		Returns:

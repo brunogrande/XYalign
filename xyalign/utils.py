@@ -3,19 +3,38 @@
 
 from __future__ import division
 from __future__ import print_function
+import os
 import logging
 import pandas as pd
 import pybedtools
-import pysam
 import sys
 import time
 # Matplotlib needs to be called in this way to set the display variable
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
+import seaborn as sns
 
 # Create logger for utils submodule
 utils_logger = logging.getLogger("xyalign.utils")
+
+
+def validate_dir(parent_dir, dir_name):
+	"""
+	Checks if directory exists and if not, creates it.
+
+	Args:
+		parent_dir: Parent directory name
+		dir_name: Name of the new directory
+
+	Returns:
+		Boolean, whether the directory existed
+	"""
+	full_path = os.path.join(parent_dir, dir_name)
+	exists = os.path.exists(full_path)
+	if not exists:
+		os.makedirs(full_path)
+	return exists
 
 
 def chromosome_bed(bamfile_obj, output_file, chromosome_list):
@@ -23,29 +42,31 @@ def chromosome_bed(bamfile_obj, output_file, chromosome_list):
 	Takes list of chromosomes and outputs a bed file with the length of each
 	chromosome on each line (e.g., chr1    0   247249719).
 
-	args:
+	Args:
 		bamfile_obj: a BamFile object for calculating length
 		output_file: name of (including full path to) desired output file
 		chromosome_list: list of chromosome/scaffolds to include
 
-	returns:
+	Returns:
 		output_file
 	"""
 	c_bed_start = time.time()
-	utils_logger.info("Creating bed file with chromosome lengths for {}".format(
-		" ".join(chromosome_list)))
+	chrs = " ".join(chromosome_list)
+	utils_logger.info(
+		"Creating bed file with chromosome lengths for {}".format(chrs))
 	with open(output_file, "w") as f:
 		for i in chromosome_list:
 			try:
-				l = bamfile_obj.get_chrom_length(i)
-				f.write("{}\t{}\t{}\n".format(i, "0", l))
+				lengths = bamfile_obj.get_chrom_length(i)
+				f.write("{}\t{}\t{}\n".format(i, "0", lengths))
 			except:
 				utils_logger.error(
 					"Error finding chromosome length in bam file {} "
 					"(for bed file)".format(bamfile_obj.filepath))
 				sys.exit(1)
-	utils_logger.info("Bed file ({}) created. Elapsed time: {} seconds".format(
-		output_file, time.time() - c_bed_start))
+	utils_logger.info(
+		"Bed file ({}) created. Elapsed time: {} seconds".format(
+			output_file, time.time() - c_bed_start))
 	return output_file
 
 
@@ -100,10 +121,11 @@ def merge_bed_files(output_file, *bed_files):
 	and an arbitrary number of external bed files (including full path),
 	and merges the bed files into the output_file
 
-	args:
+	Args:
 		output_file: full path to and name of desired output bed file
-		*bed_files: arbitrary number of external bed files (include full path)
-	returns:
+		bed_files: arbitrary number of external bed files (include full path)
+
+	Returns:
 		path to output_file
 	"""
 	merged_bed_start = time.time()
@@ -124,19 +146,19 @@ def make_region_lists(depthAndMapqDf, mapqCutoff, depth_thresh):
 	"""
 	Filters a pandas dataframe for mapq and depth
 
-	depthAndMapqDf is a dataframe with 'depth' and 'mapq' columns
-	mapqCutoff is the minimum mapq for a window to be considered high quality
-	depth_thresh is the factor to use in filtering regions based on depth:
-		Li (2014) recommends:
-			mean_depth +- (depth_thresh * (depth_mean ** 0.5)),
-				where depth_thresh is 3 or 4.
+	Args:
+		depthAndMapqDf: a dataframe with 'depth' and 'mapq' columns
+		mapqCutoff: the minimum mapq for a window to be considered high quality
+		depth_thresh: the factor to use in filtering regions based on depth:
+			Li (2014) recommends:
+				mean_depth +- (depth_thresh * (depth_mean ** 0.5)),
+					where depth_thresh is 3 or 4.
 
 	Returns:
 		A tuple containing two dataframes (passing, failing)
 	"""
 	make_region_lists_start = time.time()
 	depth_mean = depthAndMapqDf["depth"].mean()
-	depth_sd = depthAndMapqDf["depth"].std()
 
 	depthMin = depth_mean - (depth_thresh * (depth_mean ** 0.5))
 	depthMax = depth_mean + (depth_thresh * (depth_mean ** 0.5))
@@ -161,18 +183,18 @@ def output_bed(outBed, *regionDfs):
 	"""
 	Takes a list of dataframes to concatenate and merge into an output bed file
 
-	outBed is the full path to and name of the output bed file
-	*regionDfs is an arbitrary number of dataframes to be included
+	Args:
+		outBed: the full path to and name of the output bed file
+		regionDfs: arbitrary number of dataframes to be included
 
 	Returns:
-		Nothing
+		None
 	"""
 	dfComb = pd.concat(regionDfs)
 	regionList = dfComb.ix[:, "chrom":"stop"].values.tolist()
 	merge = pybedtools.BedTool(regionList).sort().merge()
 	with open(outBed, 'w') as output:
 		output.write(str(merge))
-	pass
 
 
 def chromosome_wide_plot(
@@ -182,18 +204,19 @@ def chromosome_wide_plot(
 	Plots values across a chromosome, where the x axis is the position along the
 	chromosome and the Y axis is the value of the measure of interest.
 
-	positions is an array of coordinates
-	y_value is an array of the values of the measure of interest
-	measure_name is the name of the measure of interest (y axis title)
-	chromosome is the name of the chromosome being plotted
-	sampleID is the name of the sample
-	MarkerSize is the size in points^2
-	MarkerAlpha is the transparency (0 to 1)
-	Xlim is the maximum X value
-	Ylim is the maximum Y value
+	Args:
+		positions: an array of coordinates
+		y_value: an array of the values of the measure of interest
+		measure_name: the name of the measure of interest (y axis title)
+		chromosome: the name of the chromosome being plotted
+		sampleID: the name of the sample
+		MarkerSize: the size in points^2
+		MarkerAlpha: the transparency (0 to 1)
+		Xlim: the maximum X value
+		Ylim: the maximum Y value
 
 	Returns:
-		Nothing
+		None
 	"""
 	if "x" in chrom.lower():
 		Color = "green"
@@ -215,7 +238,6 @@ def chromosome_wide_plot(
 	plt.savefig("{}_{}_{}_GenomicScatter.png".format(
 		output_prefix, chrom, measure_name))
 	plt.close(fig)
-	pass
 
 
 def plot_depth_mapq(
@@ -223,13 +245,15 @@ def plot_depth_mapq(
 	"""
 	Takes a dictionary (output from traverseBam) and outputs histograms and
 	genome-wide plots of various metrics.
+
 	Args:
 		data_dict: Dictionary of pandas data frames
 		output_prefix: Path and prefix of output files to create
 		sampleID: name/ID of sample
 		chrom_length: length of chromosome
+
 	Returns:
-		Nothing
+		None
 	"""
 
 	window_df = None if "windows" not in data_dict else data_dict[
@@ -284,4 +308,3 @@ def plot_depth_mapq(
 		mapq_bar_plot = sns.countplot(
 			x='Mapq', y='Count', data=mapq_hist)
 		mapq_bar_plot.savefig("mapq_hist.png")
-	pass
