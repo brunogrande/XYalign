@@ -180,7 +180,6 @@ def plot_read_balance(
 	axes.set_title(sampleID)
 	axes.set_xlabel("Chromosomal Coordinate")
 	axes.set_ylabel("Read Balance")
-	# print(len(positions))
 	plt.savefig("{}_{}_ReadBalance_GenomicScatter.svg".format(
 		output_prefix, chrom))
 	plt.savefig("{}_{}_ReadBalance_GenomicScatter.png".format(

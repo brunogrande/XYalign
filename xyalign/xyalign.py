@@ -15,6 +15,10 @@ import utils
 import variants
 
 
+# Initiate logging
+logger = logging.getLogger("xyalign")
+
+
 def parse_args():
 	"""Parse command-line arguments"""
 	parser = argparse.ArgumentParser(description="XYalign")
@@ -306,28 +310,32 @@ def parse_args():
 	# Validate permutation test arguments
 	if args.no_perm_test is True:
 		if args.y_present is False and args.y_absent is False:
-			print("Error. Either --y_present or --y_absent needs to be "
+			logger.error("Error. Either --y_present or --y_absent needs to be "
 									"included with --no_perm_test")
+		logger.shutdown()
 		sys.exit(1)
 	if args.platypus_calling not in ["both", "none", "before", "after"]:
-		print("Error. Platypus calling must be both, none, before, or after. "
+		logger.error("Error. Platypus calling must be both, none, before, or after. "
 								"Default is both.")
+		logger.shutdown()
 		sys.exit(1)
 
 	# Validate chromosome arguments
 	if len(args.chromosomes) == 0:
-		print("Please provide chromosome names to analyze (--chromosomes)")
+		logger.error("Please provide chromosome names to analyze (--chromosomes)")
+		logger.shutdown()
 		sys.exit(1)
 	elif len(args.chromosomes) == 1:
 		if args.no_perm_test is False:
-			print(
+			logger.error(
 				"You only provided a single chromosome to analyze. At minimum "
 				"include the flag --no_perm_test, but think carefully about "
 				"how this will affect analyses.  We recommend including at "
 				"least one autosome, X, and Y when possible.")
+			logger.shutdown()
 			sys.exit(1)
 		else:
-			print(
+			logger.warning(
 				"You only provided a single chromosome to analyze. You "
 				"included the flag --no_perm_test, so XYalign will continue, "
 				"but think carefully about "
@@ -338,32 +346,37 @@ def parse_args():
 	bwa_args = [str(x).strip() for x in args.bwa_flags.split()]
 	red_list = ["-rm", "rm", "-rf", "rf", "-RM", "RM", "-RF", "RF"]
 	if any(x in bwa_args for x in red_list):
-		print(
+		logger.error(
 			"Found either rm or rf in your bwa flags. Exiting to prevent "
 			"unintended shell consequences")
+		logger.shutdown()
 		sys.exit(1)
 	yellow_list = ["-R", "-t"]
 	if any(x in bwa_args for x in yellow_list):
-		print(
+		logger.error(
 			"Found either -R or -t in bwa flags.  These flags are already used "
 			"in XYalign.  Please remove.")
+		logger.shutdown()
 		sys.exit(1)
 
 	# Validate sliding window options
 	if args.window_size is not None and args.window_size != "None":
 		if args.window_size.isdigit() is False:
-			print(
+			logger.error(
 				"--window_size needs to be either None or a positive integer. "
 				"Exiting.")
+			logger.shutdown()
 			sys.exit(1)
 	else:
 		if args.target_bed is None:
-			print(
+			logger.error(
 				"If --window_size is None, --target_bed needs to be used. Exiting.")
+			logger.shutdown()
 			sys.exit(1)
 		elif os.path.exists(args.target_bed) is False:
-			print(
+			logger.error(
 				"Invalid file provided with --target_bed. Check path. Exiting.")
+			logger.shutdown()
 			sys.exit(1)
 
 	# Create directory structure if not already in place
@@ -684,6 +697,7 @@ def bam_analysis_postprocessing():
 
 	return(pass_df, fail_df)
 
+
 if __name__ == "__main__":
 	# Version - placeholder for now - need to incorporate it into __init__.py
 	version = "0.1"
@@ -714,8 +728,6 @@ if __name__ == "__main__":
 			logfile_path, "{}_xyalign.log".format(
 				args.sample_id))
 
-	# Initiate logging
-	logger = logging.getLogger("xyalign")
 	logger.setLevel(logging.DEBUG)
 	# Create File Handler
 	fh = logging.FileHandler(logfile, mode="w")
