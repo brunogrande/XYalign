@@ -1,6 +1,5 @@
 # Part of XYalign
 # Functions for calling and processing variants
-
 from __future__ import division
 import logging
 import subprocess

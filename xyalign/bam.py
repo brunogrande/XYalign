@@ -1,7 +1,6 @@
 # Part of XYalign
 # Functions for calling and processing variants
 from __future__ import division
-from __future__ import print_function
 import logging
 import numpy as np
 import os

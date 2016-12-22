@@ -1,8 +1,6 @@
 # Part of XYalign
 # Collection of miscellaneous functions
-
 from __future__ import division
-from __future__ import print_function
 import os
 import logging
 import pandas as pd

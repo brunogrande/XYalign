@@ -1,5 +1,6 @@
 # Part of XYalign
 # Functions, etc. related to reference fasta processing
+from __future__ import division
 import logging
 import os
 import subprocess

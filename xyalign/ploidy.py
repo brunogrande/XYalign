@@ -1,9 +1,7 @@
 # Part of XYalign
 # Collection of functions related to ploidy estimation and chromosome depth
 # comparison
-
 from __future__ import division
-from __future__ import print_function
 import csv
 import logging
 import numpy as np
