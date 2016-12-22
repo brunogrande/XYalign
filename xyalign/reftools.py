@@ -7,6 +7,7 @@ import time
 import pybedtools
 import pysam
 
+
 # Create logger for reftools submodule
 reftools_logger = logging.getLogger("xyalign.reftools")
 
@@ -29,7 +30,9 @@ class RefFasta():
 	def is_faidxed(self):
 		"""
 		Checks that fai index exists, is not empty and is newer than reference.
-		If any case is False, return False.  Other wise, return True.
+
+		Returns:
+			If any case is False, return False.  Other wise, return True.
 		"""
 		self.logger.info("Checking fai indexing of {}".format(self.filepath))
 		if os.path.exists("{}.fai".format(self.filepath)):
@@ -71,7 +74,8 @@ class RefFasta():
 		"""
 		Index reference using bwa
 
-		bwa is path to bwa program (default is 'bwa')
+		Args:
+			bwa: path to bwa program ["bwa"]
 		"""
 		self.logger.info("Creating bwa indices for: {}".format(
 			self.filepath))
@@ -90,9 +94,10 @@ class RefFasta():
 
 	def check_bwa_index(self):
 		"""
-		Checks to see if bwa indices are newer than fasta.  Returns True if so,
-		and False if any of the indices are the same age as the fasta or
-		older.
+		Checks to see if bwa indices are newer than fasta.
+
+		Returns:
+			Boolean, whether the bwa indices are newer than reference FASTA
 		"""
 		self.logger.info("Checking bwa indexing of {}".format(self.filepath))
 		if (
@@ -133,7 +138,8 @@ class RefFasta():
 		Like index_bwa, but only indexes if indices are the same age or older
 		than the fasta.  Use index_bwa to force indexing.
 
-		bwa is path to bwa program (default is 'bwa')
+		Args:
+			bwa: path to bwa program ["bwa"]
 		"""
 		if self.check_bwa_index is False:
 			self.index_bwa()
@@ -142,8 +148,9 @@ class RefFasta():
 		"""
 		Create sequence dictionary .dict file using samtools
 
-		out_dict is the desired file name for the sequence dictionary -
-			defaults to adding '.dict' to the fasta name
+		Args:
+			out_dict: the desired file name for the sequence dictionary
+				[self.filepath + ".dict"]
 		"""
 		self.logger.info("Creating sequence dictionary for: {}".format(
 			self.filepath))
@@ -171,8 +178,9 @@ class RefFasta():
 		Creates a new masked references by hardmasking regions included
 		in the bed_mask
 
-		bed_mask is a bed file of regions to mask (as N) in the new reference
-		output_fasta is the full path to and filename of the output fasta
+		Args:
+			bed_mask: a bed file of regions to mask (as N) in the new reference
+			output_fasta: the full path to and filename of the output fasta
 
 		Returns:
 			Path to new, indexed, masked) fasta
@@ -183,7 +191,7 @@ class RefFasta():
 		maskedpath = output_fasta
 		b_fasta = pybedtools.BedTool(self.filepath)
 		b_tool = pybedtools.BedTool(bed_mask)
-		b = b_tool.mask_fasta(fi=b_fasta, fo=maskedpath)
+		b_tool.mask_fasta(fi=b_fasta, fo=maskedpath)
 		reftools_logger.info("Creating fai index for {}".format(maskedpath))
 		subprocess.call(
 			[self.samtools, "faidx", "{}".format(maskedpath)])
@@ -198,9 +206,10 @@ class RefFasta():
 		Takes a reference fasta file and a list of chromosomes to include
 		and outputs a new, indexed (and optionally masked) reference fasta.
 
-		new_ref_prefix is the desired path to and prefix of the output files
-		chroms should be a list of chromosomes to include in the output fasta
-		bed_mask is a bed file of regions to mask (as N) in the new reference
+		Args:
+			new_ref_prefix: the desired path to and prefix of the output files
+			chroms: a list of chromosomes to include in the output fasta
+			bed_mask: a bed file of regions to mask (as N) in the new reference
 
 		Returns:
 			Path to new, indexed (optionally masked) fasta
@@ -221,7 +230,7 @@ class RefFasta():
 				[self.samtools, "faidx", outpath])
 			b_fasta = pybedtools.BedTool(outpath)
 			b_tool = pybedtools.BedTool(bed_mask)
-			b = b_tool.mask_fasta(fi=b_fasta, fo=maskedpath)
+			b_tool.mask_fasta(fi=b_fasta, fo=maskedpath)
 			subprocess.call(
 				[self.samtools, "faidx", "{}".format(maskedpath)])
 			reftools_logger.info(

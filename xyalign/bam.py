@@ -11,6 +11,7 @@ import pysam
 import subprocess
 import time
 
+
 # Create logger for bam submodule
 bam_logger = logging.getLogger("xyalign.bam")
 
@@ -20,8 +21,8 @@ class BamFile():
 	A class for working with external bam files
 
 	Attributes:
-		filepath is full path to external bam file
-		samtools path is path to samtools (defaults to "samtools")
+		filepath: full path to external bam file
+		samtools path: path to samtools (defaults to "samtools")
 	"""
 	def __init__(self, filepath, samtools="samtools"):
 		""" Initiate object with an associated filepath """
@@ -75,6 +76,7 @@ class BamFile():
 				time.time() - idx_start))
 			return True
 		else:
+			# TODO (bgrande): You're logging the same error message twice.
 			self.logger.error("Unable to index bamfile {}. Exiting".format(
 				self.filepath))
 			raise RuntimeError("Unable to index bamfile. Exiting")
@@ -99,6 +101,7 @@ class BamFile():
 			bamfile.close()
 			return lens
 		except:
+			# TODO (bgrande): You're logging the same error message twice.
 			self.logger.error(
 				"{} not present in bam header for {}. Exiting.".format(
 					chrom, self.filepath))
@@ -231,8 +234,8 @@ class BamFile():
 		"""Analyze BAM (or CRAM) file for various metrics.
 		Currently, this function looks at the following metrics across genomic
 		windows:
-		- Read depth
-		- Mapping quality
+			- Read depth
+			- Mapping quality
 		The average of each metric will be calculated for each window of
 		size `window_size` and stored altogether in a pandas data frame.
 
@@ -377,24 +380,25 @@ def switch_sex_chromosomes_sambamba(
 	sex chromosomes, while retaining the original bam header (and adding new
 	@PG line)
 
-	samtools_path is the path to samtools
-	sambamba_path is the path to sambamba
-	bam_orig is the original full bam file
-	bam_new is the bam containing the sex chromosomes
-	sex_chroms is a list of sex chromosomes (to be removed from bam_orig)
-	output_directory is the path to directory where all files (inc. temp) will
-			be output
-	output_prefix is the name (without path) to use for prefix for all files
-	threads is the number of threads/cpus to use
-	pg_header_dict is a dictionary with information to be included in the new
-		@PG line
-			- must contain:
-				Key = 'CL', value = list of command line values
-				Key = 'ID', value = string of program ID
-			- optional:
-				Key = 'VN', value = string of program version
-	cram (default is False) - if True, will treat input as cram files and
-		output cram files.  Right now slower, with more intermediate/temp files
+	Args:
+		samtools_path: the path to samtools
+		sambamba_path: the path to sambamba
+		bam_orig: the original full bam file
+		bam_new: the bam containing the sex chromosomes
+		sex_chroms: a list of sex chromosomes (to be removed from bam_orig)
+		output_directory: the path to directory where all files (inc. temp) will
+				be output
+		output_prefix: the name (without path) to use for prefix for all files
+		threads: the number of threads/cpus to use
+		pg_header_dict: a dictionary with information to be included in the new
+			@PG line
+				- must contain:
+					Key = 'CL', value = list of command line values
+					Key = 'ID', value = string of program ID
+				- optional:
+					Key = 'VN', value = string of program version
+		cram: if True, will treat input as cram files and output cram files.
+			Right now slower, with more intermediate/temp files [False]
 
 	Returns:
 		New bam or cram file path with original header (plus new @PG line), but sex
@@ -498,6 +502,8 @@ def switch_sex_chromosomes_sambamba(
 		# 	[samtools_path, "index", "{}/{}.cram".format(
 		# 		output_directory, output_prefix)])
 		# return "{}/{}.cram".format(output_directory, output_prefix)
+		# TODO (bgrande): This error doesn't cause the program to terminate.
+		# Maybe it's better as a warning.
 		bam_logger.error("This function does not currently handle cram files")
 		return None
 

@@ -15,6 +15,7 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import seaborn as sns
 
+
 # Create logger for utils submodule
 utils_logger = logging.getLogger("xyalign.utils")
 

@@ -6,6 +6,7 @@ import os
 import subprocess
 import time
 
+
 # Create logger for assemble submodule
 assemble_logger = logging.getLogger("xyalign.assemble")
 
@@ -17,17 +18,18 @@ def bwa_mem_mapping_sambamba(
 	Maps reads to a reference genome using bwa mem.  If output is in bam format,
 	will sort using sambamba, else will sort with samtools
 
-	bwa_path is the path to bwa
-	samtools_path is the path to samtools
-	sambamba_path is the path to sambamba
-	reference is the path to the reference genome (in fasta format)
-	output_prefix is the path and prefix to the desired output files
-	fastqs is a list of fastqs, e.g. ['sample_1.fastq', 'sample_2.fastq']
-	threads is the number of threads/cpus to use
-	read_group_line is a string containing read group info for bwa to add
-	bwa_params is a list of bwa parameters to be joined into a string and
-		inserted into the command
-	cram (default is False) - if True, will output a sorted cram file
+	Args:
+		bwa_path: the path to bwa
+		samtools_path: the path to samtools
+		sambamba_path: the path to sambamba
+		reference: the path to the reference genome (in fasta format)
+		output_prefix: the path and prefix to the desired output files
+		fastqs: a list of fastqs, e.g. ['sample_1.fastq', 'sample_2.fastq']
+		threads: the number of threads/cpus to use
+		read_group_line: a string containing read group info for bwa to add
+		bwa_params: a list of bwa parameters to be joined into a string and
+			inserted into the command
+		cram: if True, will output a sorted cram file [False]
 	"""
 	map_start = time.time()
 
@@ -38,6 +40,8 @@ def bwa_mem_mapping_sambamba(
 		"using bwa_mem_mapping_sambamba".format(
 			fastqs, reference))
 	# Check that bwa index is not newer than reference (and re-index if it is)
+	# TODO (bgrande): Avoid large try-except blocks
+	# TODO (bgrande): Be more specific about this exceptions you want to catch
 	try:
 		amb = os.path.getmtime("{}.amb".format(reference))
 		ann = os.path.getmtime("{}.ann".format(reference))

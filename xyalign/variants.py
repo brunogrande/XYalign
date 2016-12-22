@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
+
 # Create logger for variants submodule
 variants_logger = logging.getLogger("xyalign.variants")
 
@@ -207,7 +208,7 @@ def hist_read_balance(chrom, readBalance, sampleID, output_prefix):
 		None
 	"""
 	# TODO (bgrande): Restrict try block to a minimum of code to avoid
-	# accidentally catching errors
+	# accidentally catching errors that you didn't mean to catch
 	try:
 		if "x" in chrom.lower():
 			Color = "green"
@@ -228,5 +229,7 @@ def hist_read_balance(chrom, readBalance, sampleID, output_prefix):
 			"Genomic read balance histogram of {} complete.".format(chrom))
 	except IndexError:
 		# TODO (bgrande): Missing format() call
+		# TODO (bgrande): Why is this an error if the program isn't terminated
+		# Maybe it's more appropriate as a warning.
 		variants_logger.error(
 			"No sites on {} to plot histogram. Skipping.")

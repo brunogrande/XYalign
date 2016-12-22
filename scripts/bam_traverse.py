@@ -2,13 +2,13 @@ from __future__ import division
 from __future__ import print_function
 import argparse
 import os
-import subprocess
 import sys
 import numpy as np
 import pandas as pd
 import pybedtools
 import pysam
 import time
+from xyalign import variants
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
@@ -20,18 +20,11 @@ def main():
 	args = parse_args()
 
 	# Setup output paths
-	fastq_path = os.path.join(args.output_dir, "fastq")
-	bam_path = os.path.join(args.output_dir, "bam")
-	reference_path = os.path.join(args.output_dir, "reference")
 	bed_path = os.path.join(args.output_dir, "bed")
-	vcf_path = os.path.join(args.output_dir, "vcf")
 	plots_path = os.path.join(args.output_dir, "plots")
-	results_path = os.path.join(args.output_dir, "results")
 
 	depth_mapq_prefix_noprocessing = os.path.join(
 		plots_path, "{}_noprocessing".format(args.sample_id))
-	depth_mapq_prefix_highquality = os.path.join(
-		plots_path, "{}_noprocessing_high_qual".format(args.sample_id))
 	if args.high_quality_bed_out is not None:
 		# high_prefix = args.high_quality_bed_out
 		print(
@@ -173,13 +166,13 @@ def get_length(bamfile, chrom):
 	"""
 	Extract chromosome length from BAM header.
 
-	args:
+	Args:
 		bamfile: pysam AlignmentFile object
 			- can be bam, cram, or sam, needs to be declared
 				in pysam.AlignmentFile call before passing to function
 		chrom: chromosome name (string)
 
-	returns:
+	Returns:
 		Length (int)
 
 	"""
@@ -194,26 +187,28 @@ def plot_variants_per_chrom(
 	Parses a vcf file and plots read balance in separate plots
 	for each chromosome in the input list
 
-	chrom_list is the list of chromosomes to run parse_platypus_VCF and plotting
-		functions on
-	vcf_file is the file (including path) of platypus vcf to analyze
-	sampleID is the sample name (for plot titles)
-	output_prefix is the full path to and prefix of desired output plots
-	qual_cutoff is the minimum (Phred) quality to consider a site in the vcf
-	MarkerSize is the size of markers (matplotlib sizes) to use in the figure
-	MarkerAlpha is the transparency (matplotlib values) of markers for the figure
-	bamfile is the name of the corresponding bam file (used to get chromosome
-		lengths only)
+	Args:
+		chrom_list: the list of chromosomes to run parse_platypus_VCF and
+			plotting functions on
+		vcf_file: the file (including path) of platypus vcf to analyze
+		sampleID: the sample name (for plot titles)
+		output_prefix: the full path to and prefix of desired output plots
+		qual_cutoff: the minimum (Phred) quality to consider a site in the vcf
+		MarkerSize: the size of markers (matplotlib sizes) to use in the figure
+		MarkerAlpha: the transparency (matplotlib values) of markers for
+			the figure
+		bamfile: the name of the corresponding bam file (used to get
+			chromosome lengths only)
 
 	Returns:
 		Nothing
 	"""
 	for i in chrom_list:
-		parse_results = parse_platypus_VCF(vcf_file, qual_cutoff, i)
-		plot_read_balance(
+		parse_results = variants.parse_platypus_VCF(vcf_file, qual_cutoff, i)
+		variants.plot_read_balance(
 			i, parse_results[0], parse_results[2],
 			sampleID, output_prefix, MarkerSize, MarkerAlpha, bamfile)
-		hist_read_balance(
+		variants.hist_read_balance(
 			i, parse_results[2], sampleID, output_prefix)
 	pass
 
@@ -222,15 +217,15 @@ def traverse_bam_fetch(samfile, chrom, window_size):
 	"""Analyze the `samfile` BAM (or CRAM) file for various metrics.
 	Currently, this function looks at the following metrics across genomic
 	windows:
-	- Read depth
-	- Mapping quality
+		- Read depth
+		- Mapping quality
 	The average of each metric will be calculated for each window of
 	size `window_size` and stored altogether in a pandas data frame.
 
-
-	samfile is a pysam AlignmentFile object
-	chrom is the chromosome to analyze
-	window size is the integer window size to use for sliding window analyses
+	Args:
+		samfile: a pysam AlignmentFile object
+		chrom: the chromosome to analyze
+		window size: the integer window size to use for sliding window analyses
 
 	Returns:
 		A dictionary of pandas data frames with the following key:
@@ -295,18 +290,18 @@ def make_region_lists(depthAndMapqDf, mapqCutoff, depth_thresh):
 	"""
 	Filters a pandas dataframe for mapq and depth
 
-	depthAndMapqDf is a dataframe with 'depth' and 'mapq' columns
-	mapqCutoff is the minimum mapq for a window to be considered high quality
-	depth_thresh is the factor to use in filtering regions based on depth:
-		Li (2014) recommends:
-			mean_depth +- (depth_thresh * (depth_mean ** 0.5)),
-				where depth_thresh is 3 or 4.
+	Args:
+		depthAndMapqDf: a dataframe with 'depth' and 'mapq' columns
+		mapqCutoff: the minimum mapq for a window to be considered high quality
+		depth_thresh: the factor to use in filtering regions based on depth:
+			Li (2014) recommends:
+				mean_depth +- (depth_thresh * (depth_mean ** 0.5)),
+					where depth_thresh is 3 or 4.
 
 	Returns:
 		A tuple containing two dataframes (passing, failing)
 	"""
 	depth_mean = depthAndMapqDf["depth"].mean()
-	depth_sd = depthAndMapqDf["depth"].std()
 
 	depthMin = depth_mean - (depth_thresh * (depth_mean ** 0.5))
 	depthMax = depth_mean + (depth_thresh * (depth_mean ** 0.5))
@@ -325,8 +320,9 @@ def output_bed(outBed, *regionDfs):
 	"""
 	Takes a list of dataframes to concatenate and merge into an output bed file
 
-	outBed is the full path to and name of the output bed file
-	*regionDfs is an arbitrary number of dataframes to be included
+	Args:
+		outBed: the full path to and name of the output bed file
+		regionDfs: an arbitrary number of dataframes to be included
 
 	Returns:
 		Nothing
@@ -346,15 +342,16 @@ def chromosome_wide_plot(
 	Plots values across a chromosome, where the x axis is the position along the
 	chromosome and the Y axis is the value of the measure of interest.
 
-	positions is an array of coordinates
-	y_value is an array of the values of the measure of interest
-	measure_name is the name of the measure of interest (y axis title)
-	chromosome is the name of the chromosome being plotted
-	sampleID is the name of the sample
-	MarkerSize is the size in points^2
-	MarkerAlpha is the transparency (0 to 1)
-	Xlim is the maximum X value
-	Ylim is the maximum Y value
+	Args:
+		positions: an array of coordinates
+		y_value: an array of the values of the measure of interest
+		measure_name: the name of the measure of interest (y axis title)
+		chromosome: the name of the chromosome being plotted
+		sampleID: the name of the sample
+		MarkerSize: the size in points^2
+		MarkerAlpha: the transparency (0 to 1)
+		Xlim: the maximum X value
+		Ylim: the maximum Y value
 
 	Returns:
 		Nothing
@@ -386,11 +383,13 @@ def plot_depth_mapq(
 	"""
 	Takes a dictionary (output from traverseBam) and outputs histograms and
 	genome-wide plots of various metrics.
+
 	Args:
 		data_dict: Dictionary of pandas data frames
 		output_prefix: Path and prefix of output files to create
 		sampleID: name/ID of sample
 		chrom_length: length of chromosome
+
 	Returns:
 		Nothing
 	"""
@@ -447,6 +446,7 @@ def plot_depth_mapq(
 		mapq_bar_plot = sns.countplot(
 			x='Mapq', y='Count', data=mapq_hist)
 		mapq_bar_plot.savefig("mapq_hist.png")
+
 
 if __name__ == "__main__":
 	main()

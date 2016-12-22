@@ -10,6 +10,7 @@ import numpy as np
 from scipy.stats import ks_2samp
 import time
 
+
 # Create logger for ploidy submodule
 ploidy_logger = logging.getLogger("xyalign.ploidy")
 
@@ -21,13 +22,14 @@ def permutation_test_chromosomes(
 	Takes a dataframe and runs a permutation test comparing mean values
 	of two chromosomes.
 
-	data_frame is a pandas dataframe
-	first_chrom is the name of the first chromosome in comparison
-	second_chrom is the name of the second chromosome in comparison
-	chrom_column is the name of the column containing chromosome names
-	value_column is the name of the column containing the value of interest
-	num_perms is the number of permutations to use
-	output_file: if not none, will print results to this file
+	Args:
+		data_frame: a pandas dataframe
+		first_chrom: the name of the first chromosome in comparison
+		second_chrom: the name of the second chromosome in comparison
+		chrom_column: the name of the column containing chromosome names
+		value_column: the name of the column containing the value of interest
+		num_perms: the number of permutations to use
+		output_file: if not none, will print results to this file
 
 	Returns:
 		A tuple containing (mean of first chrom, mean of second chrom, p-value)
@@ -87,13 +89,14 @@ def ks_two_sample(
 	Takes a dataframe and runs a Two-sample Kolmogorov-Smirnov test on desired
 	value column
 
-	data_frame is a pandas dataframe
-	first_chrom is the name of the first chromosome in comparison
-	second_chrom is the name of the second chromosome in comparison
-	chrom_column is the name of the column containing chromosome names
-	value_column is the name of the column containing the value of interest
-	num_perms is the number of permutations to use
-	output_file: if not none, will print results to this file
+	Args:
+		data_frame: a pandas dataframe
+		first_chrom: the name of the first chromosome in comparison
+		second_chrom: the name of the second chromosome in comparison
+		chrom_column: the name of the column containing chromosome names
+		value_column: the name of the column containing the value of interest
+		num_perms: the number of permutations to use
+		output_file: if not none, will print results to this file
 
 	Returns:
 		A tuple containing (ks_statistic, ks_pvalue)
@@ -143,20 +146,20 @@ def bootstrap(
 	Takes a dataframe and bootstraps the 95 percent confidence interval
 	of the mean ratio of measure for two chromosomes (chrom1 / chrom2).
 
-	data_frame is a pandas dataframe
-	first_chrom is the name of the first chromosome in comparison
-	second_chrom is the name of the second chromosome in comparison
-	chrom_column is the name of the column containing chromosome names
-	value_column is the name of the column containing the value of interest
-	num_perms is the number of permutations to use
-	output_file: if not none, will print results to this file
+	Args:
+		data_frame: a pandas dataframe
+		first_chrom: the name of the first chromosome in comparison
+		second_chrom: the name of the second chromosome in comparison
+		chrom_column: the name of the column containing chromosome names
+		value_column: the name of the column containing the value of interest
+		num_perms: the number of permutations to use
+		output_file: if not none, will print results to this file
 
 	Returns:
 		A tuple containing (0.025 percentile, 0.5 percentile, 0.975 percentile)
 	"""
 	boot_start = time.time()
 
-	ks_start = time.time()
 	ploidy_logger.info(
 		"Bootstrapping mean depth ratio of {} over {}".format(
 			first_chrom, second_chrom))
